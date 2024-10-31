@@ -103,6 +103,7 @@ def make_parser():
         action="store_true",
         help="Evaluating on train set.",
     )
+    parser.add_argument("--save-path", type=str, default='./yolox_pred.json', help="save json path")
     parser.add_argument(
         "--speed",
         dest="speed",
@@ -205,6 +206,8 @@ def main(exp, args, num_gpu):
         model, is_distributed, args.fp16, trt_file, decoder, exp.test_size, uncertain=exp.uncertain, softmax=exp.bbox_unc_loss != 'nll_na'
     )
     logger.info("\n" + summary)
+    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
+    os.rename('./yolox_testdev_2017.json', args.save_path)
 
 
 if __name__ == "__main__":
