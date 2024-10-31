@@ -10,6 +10,7 @@ from pycocotools.coco import COCO
 
 
 def read_raw_anns(ann_file):
+    # function to read raw annotators annotations with format x1, y1, x2, y2, cls_id, ann_id
     anns = []
     with open(ann_file, 'r') as f:
         for line in f.readlines():
@@ -67,7 +68,8 @@ def bbox_iou(box1, box2, x1y1x2y2=True, eps=1e-7):
     return iou  # IoU
 
 def preprocess_anns(anns, n_annotator, n_class, box_iou_thres=0.1):
-    def find_same_box(labels):
+    # preprocessing function to cluster annotations and compute soft class probabilities
+    def find_and_cluster(labels):
         def group_box(groups, labels):
             curr_box, labels = labels[0], labels[1:]
             best_i = -1
@@ -121,7 +123,7 @@ def preprocess_anns(anns, n_annotator, n_class, box_iou_thres=0.1):
             class_logits = np.eye(n_class + 1)[classes.astype(int)].mean(axis=0)
 
             final_box = np.zeros((4,))
-            # average as final box
+            # for iou matching of cluster
             final_box[:4] = group[:, :4].mean(axis=0)
 
             assert final_box[2] > final_box[0] and final_box[3] > final_box[1]
@@ -136,23 +138,12 @@ def preprocess_anns(anns, n_annotator, n_class, box_iou_thres=0.1):
             ret.append(temp + groups[i][:, :4].flatten().round().astype(int).tolist())
         return ret
 
-    groups = find_same_box(anns)
+    groups = find_and_cluster(anns)
     return reduce_groups(groups, n_annotator)
 
-def read_uncertain_ann(ann_file, n_class=20):
-    anns, raw_bbox = [], []
-    with open(ann_file, 'r') as f:
-        for line in f.readlines():
-            # x1, y1, x2, y2, cls_id = list(map(float, line.split(',')))
-            temp = list(map(float, line.split(',')))
-            anns.append(temp[:4 + n_class + 1])
-            raw_bbox.append(temp[4 + n_class + 1:])
-    if len(anns):
-        return np.asarray(anns), raw_bbox
-    else:
-        return np.zeros((0, 4 + n_class + 1)), raw_bbox
-
 def load_predictions(pred_json, gt_json, gt_files=None, conf_thres=None, bg_thres=None):
+    # load json predictions from yolox and probdet model and convert to same format
+    # return (box mean, box var, class prob), file_lists
     with open(pred_json, 'r') as f:
         preds = json.load(f)
     cocoGt = COCO(gt_json)
@@ -211,11 +202,12 @@ def load_predictions(pred_json, gt_json, gt_files=None, conf_thres=None, bg_thre
             pred_boxes.append(np.zeros((0, 4)))
             pred_boxes_var.append(np.zeros((0, 4)))
             cls_preds.append(np.zeros((0, n_class + 1)))
-    # pred boxes is xyxy, pred_boxes_var is shape 4 for the variance, cls_preds is shape num_class+1 (bg conf, raw_classes_conf, should sum to 1)
+    # pred_boxes is xyxy, pred_boxes_var is shape 4 for the variance, cls_preds is shape num_class+1 (bg conf, raw_classes_conf), should sum to 1
+    # gt_files is the list of filename corresponding to the index of pred_boxes, pred_boxes_var, cls_preds
     return (pred_boxes, pred_boxes_var, cls_preds), gt_files
 
-# find best gt for each det, sort gt by agreement anad pred by conf
 def get_dt_gt_match(gt_box, pred_box, iou_thres):
+    # find best gt for each det, sort gt by agreement and pred by conf
     ious = torchvision.ops.box_iou(torch.from_numpy(gt_box), torch.from_numpy(pred_box)).numpy()
     gt_match_inds, dt_match_inds = np.ones((len(gt_box),), dtype=int) * -1, np.ones((len(pred_box),), dtype=int) * -1
     # match each det to best gt with highest iou > iou_thres
@@ -231,6 +223,7 @@ def get_dt_gt_match(gt_box, pred_box, iou_thres):
 
 def compute_metrics(box_preds, box_vars, cls_preds, gts, raw_gt_bboxes, iou_thres=0.5, verbose=False, pred_xyxy=True,
                     max_det=100):
+    # perform matching of prediction to gt and compute calibration metrics
     assert len(box_preds) == len(box_vars) == len(cls_preds) == len(gts) == len(raw_gt_bboxes)
     box_preds, box_vars, cls_preds, gts, raw_gt_bboxes = copy.deepcopy(box_preds), copy.deepcopy(
         box_vars), copy.deepcopy(cls_preds), copy.deepcopy(gts), copy.deepcopy(raw_gt_bboxes)
@@ -278,6 +271,7 @@ def compute_metrics(box_preds, box_vars, cls_preds, gts, raw_gt_bboxes, iou_thre
         all_matched_loc_score.extend(matched_loc_scores)
         all_fn_loc_score.extend(fn_loc_scores)
         all_fp_loc_score.extend(fp_loc_scores)
+    # return (tvd, tvd_fp, lue, fne, lue_fp {same as tvd_fp}), (tp_count, fp_count, fn_count)
     return tuple(np.mean(x) if len(x) else 0. for x in
                  (all_matched_tvds, all_fp_tvds, all_matched_loc_score, all_fn_loc_score, all_fp_loc_score)), (
     len(all_matched_loc_score), len(all_fp_loc_score), len(all_fn_loc_score))
@@ -312,6 +306,7 @@ def calc_mean_tvd(preds, gts, dt_match_inds, gt_match_inds, verbose=False):
 
 
 def chunker(seq, size):
+    # helper function to chunk list into equal size lists
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 

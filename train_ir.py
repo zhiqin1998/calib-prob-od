@@ -13,6 +13,7 @@ from src.util import get_dt_gt_match, load_predictions
 
 
 def isotonic_regression(dataset, use_weight=False, n_sample=10, loc=False):
+    # train isotonic regression model
     model = {}
     for cls_id, data in dataset.items():
         scores, labels, weights = data
@@ -24,6 +25,7 @@ def isotonic_regression(dataset, use_weight=False, n_sample=10, loc=False):
 
 
 def batch_dt_gt_match(box_preds, box_vars, cls_preds, gts, raw_gt_bboxes, iou_thres=0.1, pred_xyxy=True, max_det=100):
+    # batch matching of prediction to gt
     assert len(box_preds) == len(box_vars) == len(cls_preds) == len(gts) == len(raw_gt_bboxes)
     box_preds, box_vars, cls_preds, gts, raw_gt_bboxes = copy.deepcopy(box_preds), copy.deepcopy(
         box_vars), copy.deepcopy(cls_preds), copy.deepcopy(gts), copy.deepcopy(raw_gt_bboxes)
@@ -57,6 +59,7 @@ def batch_dt_gt_match(box_preds, box_vars, cls_preds, gts, raw_gt_bboxes, iou_th
     return ret, (updated_box_preds, updated_box_vars, updated_cls_preds), updated_gts, updated_raw_gt_bboxes
 
 def prepare_train_labels(all_matches, cls_preds, gts, ignore_bg=False, exclude_fp=True, fp_weight_scale=10):
+    # convert the prediciton-gt match into suitable format for sklearn
     dataset = {}
     for all_match, cls_pred, gt in zip(all_matches, cls_preds, gts):
         gt_match_inds, dt_match_inds = all_match
@@ -87,6 +90,7 @@ def prepare_train_labels(all_matches, cls_preds, gts, ignore_bg=False, exclude_f
     return dataset
 
 def prepare_train_labels_loc(all_matches, box_var_preds, cls_preds, gts, raw_bboxes, ignore_bg=False, exclude_fp=True):
+    # convert the prediciton-gt match into suitable format for sklearn
     dataset = {}
     for all_match, box_var_pred, cls_pred, gt, raw_bbox in zip(all_matches, box_var_preds, cls_preds, gts, raw_bboxes):
         gt_match_inds, dt_match_inds = all_match
