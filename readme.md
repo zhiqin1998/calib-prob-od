@@ -1,7 +1,8 @@
 # Calibration of Probabilistic Object Detectors with Annotators Uncertainty
 
-## Description
-Abstract goes here
+[//]: # (## Description)
+
+[//]: # (Abstract goes here)
 
 ## Setup Environment
 Our code extends the implementation of [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) and [probdet](https://github.com/asharakeh/probdet) (probabilistic Faster R-CNN and Retinanet).
