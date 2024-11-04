@@ -1,7 +1,6 @@
 # Calibration of Probabilistic Object Detectors with Annotators Uncertainty
 
 [//]: # (## Description)
-
 [//]: # (Abstract goes here)
 
 ## Setup Environment

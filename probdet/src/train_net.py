@@ -52,8 +52,8 @@ def custom_register_coco_instances(name, metadata, json_file, image_root):
         json_file=json_file, image_root=image_root, evaluator_type="coco", **metadata
     )
 
-register_coco_instances('vocmix_val', {}, '../data/voc_mix/processed_coco/annotations/instances_val2017.json', '../data/voc_mix/processed_coco/val2017')
-register_coco_instances('vocmix_test', {}, '../data/voc_mix/processed_coco/annotations/instances_test2017.json', '../data/voc_mix/processed_coco/test2017')
+register_coco_instances('vocmix_val', {}, '../data/voc_mix/processed_coco_unc/annotations/instances_val2017.json', '../data/voc_mix/processed_coco_unc/val2017')
+register_coco_instances('vocmix_test', {}, '../data/voc_mix/processed_coco_unc/annotations/instances_test2017.json', '../data/voc_mix/processed_coco_unc/test2017')
 
 register_coco_instances('vocmix_train_ind', {}, '../data/voc_mix/processed_coco_unc_ind/annotations/instances_train2017.json', '../data/voc_mix/processed_coco_unc_ind/train2017')
 

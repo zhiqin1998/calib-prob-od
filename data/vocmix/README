@@ -1,1 +1,5 @@
-Create train2017, val2017 and test2017 and put images from the PASCAL VOC dataset.
+1. Download all images from the PASCAL VOC dataset.
+2. With the provided `instances_train2017.json`, create a hold out validation set accordingly into `instances_val2017.json`
+3. Create train2017, val2017 and test2017 and put images from the PASCAL VOC dataset.
+4. Create `processed_coco_unc` folder and put everything into it, following COCO dataset format.
+5. (Optional for baselines) Copy `processed_coco_unc` to `processed_coco_unc_ind` folder and duplicate the training dataset (images and annotations) for each unique annotator.
