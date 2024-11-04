@@ -8,7 +8,7 @@ MODEL:
             COVARIANCE_TYPE: 'diagonal' # One of the following: 'full', 'diagonal'
     ROI_HEADS:
         NUM_CLASSES: 20
-    WEIGHTS: "./pretrained_weights/faster_rcnn_R_50_FPN_3x_reg_covar_nll.pth.pth"
+    WEIGHTS: "./pretrained_weights/faster_rcnn_R_50_FPN_3x_reg_covar_nll.pth"
 
 SOLVER:
     IMS_PER_BATCH: 8

@@ -35,7 +35,7 @@ VOC-MIX dataset is readily available in `data` for this anonymized repository.
    1. `YOLOX`: Create a new config file under `exps/default` and set 
       ```python
       self.uncertain = True
-      self.bbox_unc_loss = 'dmm2' 
+      self.bbox_unc_loss = 'dmm' 
       ```
    2. `probdet`: Create a new config file under `src/configs/COCO-Detection` and set
       ```yaml

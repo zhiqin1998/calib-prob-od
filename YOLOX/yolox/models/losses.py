@@ -48,7 +48,7 @@ class BoxUncertainLoss(nn.Module):
                 loss = (
                            torch.abs(pred_mean - target) + torch.abs(torch.exp(pred_var) - ((pred_mean - target) ** 2))
                        ).sum(1) / (count * 4)
-            elif self.loss_type == 'dmm2':
+            elif self.loss_type == 'dmm':
                 alpha = 1 - target_obj
                 # z = stats.norm.ppf(1 - alpha / 2)
                 z = torch.distributions.Normal(0, 1).icdf(1 - torch.clamp(alpha, min=.01) / 2)

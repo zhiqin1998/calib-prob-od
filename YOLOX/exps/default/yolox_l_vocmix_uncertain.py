@@ -28,6 +28,6 @@ class Exp(MyExp):
         self.no_aug_epochs = 100
 
         self.uncertain = True
-        self.bbox_unc_loss = 'dmm2'  # nll, dmm (direct moment matching)
+        self.bbox_unc_loss = 'dmm'  # nll, dmm (direct moment matching)
         self.clamp_log_var = 7.
         self.bbox_unc_weight = 0.1  # 0.1
