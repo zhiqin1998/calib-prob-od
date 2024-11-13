@@ -10,7 +10,15 @@ from pycocotools.coco import COCO
 
 
 def read_raw_anns(ann_file):
-    # function to read raw annotators annotations with format x1, y1, x2, y2, cls_id, ann_id
+    """
+    Function to read raw annotators annotations with format x1, y1, x2, y2, cls_id, ann_id
+
+    Parameters:
+        ann_file (str): the annotation file path
+
+    Returns:
+        np.ndarray: nx6 loaded annotations with format x1, y1, x2, y2, cls_id, ann_id
+    """
     anns = []
     with open(ann_file, 'r') as f:
         for line in f.readlines():
@@ -21,15 +29,28 @@ def read_raw_anns(ann_file):
     else:
         return np.zeros((0, 6))
 
+
 def convert_unc_bbox(proc_ann, to_coco=True, n_class=None):
-    # helper function to convert xyxy to xywh and vice versa
+    """
+    Helper function to convert list of bounding boxes from xyxy to xywh and vice versa
+
+    Parameters:
+        proc_ann (list[float], np.ndarray): nxm raw annotation with format *box coordinates, *class_probs, *raw_boxes
+        to_coco (bool): boolean flag to convert xyxy to xywh, default is true
+        n_class (int): number of classes
+
+    Returns:
+        np.ndarray: nxm converted annotation with format *box coordinates, *class_probs, *raw_boxes
+    """
     assert n_class is not None
     proc_ann = copy.deepcopy(proc_ann)
+
     def box_ops(ii, jj):
         if to_coco:
             proc_ann[ii][jj] = proc_ann[ii][jj] - proc_ann[ii][jj - 2]
         else:
             proc_ann[ii][jj] = proc_ann[ii][jj] + proc_ann[ii][jj - 2]
+
     for i in range(len(proc_ann)):
         for j in range(len(proc_ann[i])):
             k = j
@@ -41,8 +62,20 @@ def convert_unc_bbox(proc_ann, to_coco=True, n_class=None):
                 box_ops(i, j)
     return proc_ann
 
+
 def bbox_iou(box1, box2, x1y1x2y2=True, eps=1e-7):
-    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
+    """
+    Returns the IoU of box1 to box2
+
+    Parameters:
+        box1 (np.ndarray): array of shape 4
+        box2 (np.ndarray): array of shape nx4
+        x1y1x2y2 (bool): boolean flag to indicate whether box is in x1y1x2y2 format
+        eps (float): epsilon for numerical stability
+
+    Returns:
+        np.ndarray: IoU of box1 to box2, with length of n
+    """
     box2 = box2.T
 
     # Get the coordinates of bounding boxes
@@ -67,8 +100,21 @@ def bbox_iou(box1, box2, x1y1x2y2=True, eps=1e-7):
     iou = inter / union
     return iou  # IoU
 
+
 def preprocess_anns(anns, n_annotator, n_class, box_iou_thres=0.1):
-    # preprocessing function to cluster annotations and compute soft class probabilities
+    """
+    Preprocessing function to cluster annotations and compute soft class probabilities
+
+    Parameters:
+        anns (list[int], np.ndarray): nx6 of annotations with format x1, y1, x2, y2, cls_id, ann_id
+        n_annotator (int): number of annotators
+        n_class (int): number of classes
+        box_iou_thres (float): IoU threshold, default is 0.1
+
+    Returns:
+        list[float]: list of clustered annotations with format x1, y1, x2, y2, *class_probs, *raw_boxes
+    """
+
     def find_and_cluster(labels):
         def group_box(groups, labels):
             curr_box, labels = labels[0], labels[1:]
@@ -116,7 +162,7 @@ def preprocess_anns(anns, n_annotator, n_class, box_iou_thres=0.1):
         return groups
 
     def reduce_groups(groups, n_annotator):
-        labels = np.zeros((len(groups), 4 + n_class + 1)) # +1 for bg
+        labels = np.zeros((len(groups), 4 + n_class + 1))  # +1 for bg
         keep = []
         for i, group in enumerate(groups):
             classes = np.concatenate((group[:, 4] + 1, np.full((n_annotator - len(group),), 0)))  # 0 is bg
@@ -141,9 +187,24 @@ def preprocess_anns(anns, n_annotator, n_class, box_iou_thres=0.1):
     groups = find_and_cluster(anns)
     return reduce_groups(groups, n_annotator)
 
+
 def load_predictions(pred_json, gt_json, gt_files=None, conf_thres=None, bg_thres=None):
-    # load json predictions from yolox and probdet model and convert to same format
-    # return (box mean, box var, class prob), file_lists
+    """
+    Load json predictions from yolox and probdet model and convert to the same format for evaluation
+
+    Parameters:
+        pred_json (str): path to pred json file
+        gt_json (str): path to gt json file (annotation clusters json)
+        gt_files (list): list of filenames to consider, by default infer from gt_json
+        conf_thres (float): confidence threshold
+        bg_thres (float): background threshold
+
+    Returns:
+        list[list[float]]: list of n length containing the predicted boxes mean in xyxy format
+        list[list[float]]: list of n length containing the predicted boxes variances in xyxy format
+        list[list[float]]: list of n predicted class probabilities with shape num_class+1
+        list[str]: list of n filenames corresponding to the index of the lists above
+    """
     with open(pred_json, 'r') as f:
         preds = json.load(f)
     cocoGt = COCO(gt_json)
@@ -176,14 +237,14 @@ def load_predictions(pred_json, gt_json, gt_files=None, conf_thres=None, bg_thre
             bbox[2] = bbox[0] + bbox[2]
             bbox[3] = bbox[1] + bbox[3]
             pred_box.append(bbox)
-            if 'xyxy_bbox_var' in pred: # yolox
+            if 'xyxy_bbox_var' in pred:  # yolox
                 pred_box_var.append(pred['xyxy_bbox_var'])
                 cls_pred.append(pred['cls_prob'])
-            elif 'bbox_covar' in pred: # probdet
+            elif 'bbox_covar' in pred:  # probdet
                 pred_box_var.append([x[i] for i, x in enumerate(pred['bbox_covar'])])
-                if len(pred['cls_prob']) == n_class + 1: # frcnn
+                if len(pred['cls_prob']) == n_class + 1:  # frcnn
                     cls_pred.append(pred['cls_prob'][-1:] + pred['cls_prob'][:-1])
-                else: # retinanet
+                else:  # retinanet
                     bg_prob = 1 - max(pred['cls_prob'])
                     temp = [bg_prob] + copy.deepcopy(pred['cls_prob'])
                     tot = sum(temp)
@@ -206,8 +267,20 @@ def load_predictions(pred_json, gt_json, gt_files=None, conf_thres=None, bg_thre
     # gt_files is the list of filename corresponding to the index of pred_boxes, pred_boxes_var, cls_preds
     return (pred_boxes, pred_boxes_var, cls_preds), gt_files
 
+
 def get_dt_gt_match(gt_box, pred_box, iou_thres):
-    # find best gt for each det, sort gt by agreement and pred by conf
+    """
+    Matching function to match detection to ground truth similar to COCO
+
+    Parameters:
+         gt_box (list[float]): list of mx4 xyxy gt boxes
+         pred_box (list[float]): list of nx4 xyxy predicted boxes
+         iou_thres (float): IoU threshold
+
+    Returns:
+        list[int]: list of n indices corresponding to the index of the predicted boxes, -1 means no match
+        list[int]: list of m indices corresponding to the index of the gt boxes, -1 means no match
+    """
     ious = torchvision.ops.box_iou(torch.from_numpy(gt_box), torch.from_numpy(pred_box)).numpy()
     gt_match_inds, dt_match_inds = np.ones((len(gt_box),), dtype=int) * -1, np.ones((len(pred_box),), dtype=int) * -1
     # match each det to best gt with highest iou > iou_thres
@@ -221,8 +294,33 @@ def get_dt_gt_match(gt_box, pred_box, iou_thres):
                 dt_match_inds[i] = max_idx
     return gt_match_inds, dt_match_inds
 
+
 def compute_metrics(box_preds, box_vars, cls_preds, gts, raw_gt_bboxes, iou_thres=0.5, verbose=False, pred_xyxy=True,
                     max_det=100):
+    """
+    Function to compute the metrics with all n returned results of load_predictions function
+
+    Parameters:
+        box_preds (list[list[float]]): list of n length containing the predicted boxes mean in xyxy format
+        box_vars (list[list[float]]): list of n length containing the predicted boxes variances in xyxy format
+        cls_preds (list[list[float]]): list of n predicted class probabilities with shape num_class+1
+        gts (list[list[float]]): list of n length containing the gt boxes and class probs in xyxy + (num_class+1) format
+        raw_gt_bboxes (list[list[float]]): list of n length containing the raw gt boxes in xyxy format
+        iou_thres (float): IoU threshold
+        verbose (bool): flag to show processing steps for debugging, default is False
+        pred_xyxy(bool): flag to indicate whether boxes are in xyxy format or not, default is True
+        max_det (int): maximum number of detections
+
+    Returns:
+        float: total variation distance of tp and fn (range 0 to 1)
+        float: total variation distance of fp (range 0 to 1)
+        float: localization uncertainty error of tp (range 0 to 1)
+        float: false negative error of fn (range 0 to 1)
+        float: localization uncertainty error of fp (range 0 to 1), this is same as tvd of fp
+        int: tp count
+        int: fp count
+        int: fn count
+    """
     # perform matching of prediction to gt and compute calibration metrics
     assert len(box_preds) == len(box_vars) == len(cls_preds) == len(gts) == len(raw_gt_bboxes)
     box_preds, box_vars, cls_preds, gts, raw_gt_bboxes = copy.deepcopy(box_preds), copy.deepcopy(
@@ -274,12 +372,24 @@ def compute_metrics(box_preds, box_vars, cls_preds, gts, raw_gt_bboxes, iou_thre
     # return (tvd, tvd_fp, lue, fne, lue_fp {same as tvd_fp}), (tp_count, fp_count, fn_count)
     return tuple(np.mean(x) if len(x) else 0. for x in
                  (all_matched_tvds, all_fp_tvds, all_matched_loc_score, all_fn_loc_score, all_fp_loc_score)), (
-    len(all_matched_loc_score), len(all_fp_loc_score), len(all_fn_loc_score))
+        len(all_matched_loc_score), len(all_fp_loc_score), len(all_fn_loc_score))
 
 
 def calc_mean_tvd(preds, gts, dt_match_inds, gt_match_inds, verbose=False):
-    # preds is *cls_probs (including bg)
-    # and gts *cls_probs (including bg)
+    """
+    Function to compute mean total variation distance of one data sample (image)
+
+    Parameters:
+        preds (list[float]): list of n predicted class probabilities of (n x num_class+1)
+        gts (list[float]): list of m ground truth class probabilities of (m x num_class+1)
+        dt_match_inds (list[int]): list of n gt indices that the prediction is matched to, -1 means no match
+        gt_match_inds (list[int]): list of m prediction indices that the ground truth is matched to, -1 means no match
+        verbose (bool): flag to show processing steps for debugging, default is False
+
+    Returns:
+        float: total variation distance of tp and fn (range 0 to 1)
+        float: total variation distance of fp (range 0 to 1)
+    """
     if verbose:
         print('calculate tvd')
     if len(preds) == 0 and len(gts) == 0:
@@ -306,12 +416,31 @@ def calc_mean_tvd(preds, gts, dt_match_inds, gt_match_inds, verbose=False):
 
 
 def chunker(seq, size):
-    # helper function to chunk list into equal size lists
+    """Helper function to chunk a long list into equal size lists"""
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 def calc_loc_ci_score(box_preds, var_preds, fg_scores, raw_gt_bboxes, dt_match_inds, gt_match_inds, n_anns,
                       verbose=False, pred_xyxy=True):
+    """
+    Function to compute localization uncertainty error of one data sample (image)
+
+    Parameters:
+        box_preds (list[float]): list of n predicted box mean of (n x 4)
+        var_preds (list[float]): list of n predicted box variance of (n x 4)
+        fg_scores (list[float]): list of n predicted certainty
+        raw_gt_bboxes (list[list[float]]): list of m raw bounding boxes of all annotators
+        dt_match_inds (list[int]): list of n gt indices that the prediction is matched to, -1 means no match
+        gt_match_inds (list[int]): list of m prediction indices that the ground truth is matched to, -1 means no match
+        n_anns (int): number of annotators
+        verbose (bool): flag to show processing steps for debugging, default is False
+        pred_xyxy (bool): flag to indicate whether boxes are in xyxy format or not, default is True
+
+    Returns:
+        float: localization uncertainty error of tp (range 0 to 1)
+        float: false negative error of fn (range 0 to 1)
+        float: localization uncertainty error of fp (range 0 to 1), this is same as tvd of fp
+    """
     # preds is x1 y1 x2 y2 or xywh
     # raw_bboxes is n * (x1, y1, x2, y2)
     if verbose:

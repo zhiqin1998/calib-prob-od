@@ -7,6 +7,16 @@ import numpy as np
 
 
 def inference(model, json_input, save_path, loc_model=None, probdet=False):
+    """
+    Function to perform inference of the isotonic regression posthoc calibrator
+
+    Parameters:
+        model (dict[sklearn.isotonic.IsotonicRegression]): dict of sklearn isotonic regression models for class confidence, key is the class index
+        json_input (str): path to prediction json file
+        save_path (str): json file path to save calibrated predictions
+        loc_model (dict[sklearn.isotonic.IsotonicRegression]): dict of sklearn isotonic regression models for box variance, key is 0, 1, 2, 3 for x1, y1, x2, y2
+        probdet (bool): flag to indicate whether the prediction is from probdet or YOLOX, default is False (YOLOX)
+    """
     with open(json_input, 'r') as f:
         preds = json.load(f)
     print(f'inferencing on {len(preds)} predictions')
@@ -43,9 +53,12 @@ def inference(model, json_input, save_path, loc_model=None, probdet=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--pred-json', type=str, help='path of prediction json file')
-    parser.add_argument('--out-json', type=str, default='./outputs/dataset_name/calibrated_pred.json', help='path of output json file')
-    parser.add_argument('--class-model', type=str, default='/outputs/dataset_name/class_ir_model.pkl', help='model path of class ir model')
-    parser.add_argument('--loc-model', type=str, default='/outputs/dataset_name/loc_ir_model.pkl', help='model path of loc ir model')
+    parser.add_argument('--out-json', type=str, default='./outputs/dataset_name/calibrated_pred.json',
+                        help='path of output json file')
+    parser.add_argument('--class-model', type=str, default='/outputs/dataset_name/class_ir_model.pkl',
+                        help='model path of class ir model')
+    parser.add_argument('--loc-model', type=str, default='/outputs/dataset_name/loc_ir_model.pkl',
+                        help='model path of loc ir model')
     parser.add_argument('--probdet', type=bool, default=False, help='prediction is from probdet project')
 
     opt = parser.parse_args()

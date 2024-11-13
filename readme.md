@@ -20,11 +20,11 @@ Our code extends the implementation of [YOLOX](https://github.com/Megvii-BaseDet
     ```
    
 ## Preparing Datasets
-VOC-MIX dataset is readily available in `data` for this anonymized repository.
+VOC-MIX dataset is readily available in `data` for this anonymized repository. Follow the steps below to bring your own dataset.
 1. Create a new directory in `data` with your dataset name
 2. Place the training, validation and test images into `train2017`, `val2017` and `test2017`, respectively
 3. Prepare your annotations with YOLO (one txt file per image) format: x1,y1,x2,y2,class_id,annotator_id
-4. Run the following script to preprocess them into expected COCO format
+4. Run the following script to cluster raw annotations and preprocess them into expected COCO format
     ```bash
     python preprocess_data.py --yolo-txt-dirs <path to yolo annotations> --output-json data/<dataset name>/annotations/instances_{train/val/test}2017.json \
                 --image-dir data/<dataset name>/{train/val/test}2017/ --n-class <number of classes>
@@ -46,7 +46,7 @@ VOC-MIX dataset is readily available in `data` for this anonymized repository.
 2. Perform inference on the hold-out dataset with the trained object detector, saving them in COCO json format.
 3. Train the isotonic regression models with `python train_ir.py`
 
-Example command for training probabilistic YOLOX on VOC-MIX dataset:
+Example commands for training probabilistic YOLOX on VOC-MIX dataset:
 ```bash
 cd YOLOX
 python tools/train.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 -o -c pretrained_weights/yolox_l.pth
@@ -60,7 +60,7 @@ python train_ir.py --gt-json data/vocmix/annotations/instances_val2017.json --pr
 2. Perform inference with the trained isotonic regression models with `python test_ir.py`
 3. Compute calibration evaluation metric with `python eval_calibration.py`
 
-Example command for inferencing and evaluating probabilistic YOLOX on VOC-MIX test dataset:
+Example commands for inferencing and evaluating probabilistic YOLOX on VOC-MIX test dataset:
 ```bash
 cd YOLOX
 python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --test --save-path vocmix_test_pred.json
