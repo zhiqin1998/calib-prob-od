@@ -212,7 +212,7 @@ def load_predictions(pred_json, gt_json, gt_files=None, conf_thres=None, bg_thre
         gt_files = [x['file_name'] for x in cocoGt.dataset['images']]
     res_dict = defaultdict(list)
     # convert result to dict image_id: annotations
-    n_class = len(cocoGt.cats)
+    n_class = len([x for x in cocoGt.cats if cocoGt.cats[x]['name'] != 'bg']) # remove bg
     assert n_class <= len(preds[0]['cls_prob']) <= n_class + 1
     if 'xyxy_bbox_var' not in preds[0] and 'bbox_covar' not in preds[0]:
         print('warning no box variance, ignore metrics from localisation')
@@ -468,10 +468,11 @@ def calc_loc_ci_score(box_preds, var_preds, fg_scores, raw_gt_bboxes, dt_match_i
                 [int(((lower_bound < raw_gt_box) & (raw_gt_box < upper_bound)).all()) for raw_gt_box in
                  chunker(raw_gt_bboxes[i], 4)]) / n_anns  # percentage of annotated bbox in interval
             true_perc = (len(raw_gt_bboxes[i]) // 4) / n_anns
+            pred_perc = fg_scores[gt_match_ind]
             if verbose:
-                print(perc_gt_in_interval, true_perc)
+                print(perc_gt_in_interval, true_perc, pred_perc)
             scores.append(
-                abs(perc_gt_in_interval - true_perc))  # diff between predicted fg confidence and actual number of annotated bbox in interval
+                abs(perc_gt_in_interval - pred_perc))  # diff between predicted fg confidence and actual number of annotated bbox in interval
         else:  # -1
             fn_scores.append(
                 abs((len(raw_gt_bboxes[i]) // 4) / n_anns))  # penalise for not predicting when there are annotated bbox

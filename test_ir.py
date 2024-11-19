@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import pickle
+import time
 
 import numpy as np
 
@@ -20,6 +21,7 @@ def inference(model, json_input, save_path, loc_model=None, probdet=False):
     with open(json_input, 'r') as f:
         preds = json.load(f)
     print(f'inferencing on {len(preds)} predictions')
+    st = time.time()
     for i, pred in enumerate(preds):
         curr_cls_prob, curr_cls_id = pred['cls_prob'], pred['category_id']
 
@@ -45,6 +47,7 @@ def inference(model, json_input, save_path, loc_model=None, probdet=False):
                 pred['xyxy_bbox_var'] = pred_box_var
         preds[i] = pred
 
+    print('done in', time.time() - st)
     with open(save_path, 'w') as f:
         json.dump(preds, f)
     print(f'saved results to {save_path}')
@@ -59,7 +62,8 @@ if __name__ == '__main__':
                         help='model path of class ir model')
     parser.add_argument('--loc-model', type=str, default='/outputs/dataset_name/loc_ir_model.pkl',
                         help='model path of loc ir model')
-    parser.add_argument('--probdet', type=bool, default=False, help='prediction is from probdet project')
+    parser.add_argument('--probdet', action='store_true', default=False,
+                        help='prediction is from probdet project')
 
     opt = parser.parse_args()
     with open(opt.class_model, 'rb') as f:

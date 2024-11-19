@@ -2,6 +2,7 @@ import argparse
 import copy
 import os
 import pickle
+import time
 
 import numpy as np
 from scipy import stats
@@ -210,12 +211,13 @@ def main(opt):
     all_matches, sorted_preds, sorted_gts, sorted_raw_bboxes = batch_dt_gt_match(preds[0], preds[1], preds[2], all_gts,
                                                                                  all_raw_bboxes)
     print(f'training isotonic regression models with sample weight={opt.use_weight}')
+    st = time.time()
     dataset = prepare_train_labels(all_matches, sorted_preds[2], sorted_gts)
     ir_model = isotonic_regression(dataset, use_weight=opt.use_weight)
 
     loc_dataset = prepare_train_labels_loc(all_matches, sorted_preds[1], sorted_preds[2], sorted_gts, sorted_raw_bboxes)
     loc_ir_model = isotonic_regression(loc_dataset, use_weight=opt.use_weight, loc=True)
-
+    print('done training in', time.time() - st)
     os.makedirs(opt.out_dir, exist_ok=True)
     with open(os.path.join(opt.out_dir, 'class_ir_model.pkl'), 'wb') as f:
         pickle.dump(ir_model, f)
@@ -231,7 +233,7 @@ if __name__ == '__main__':
     parser.add_argument('--gt-json', type=str, help='path of ground truth json file')
     parser.add_argument('--pred-json', type=str, help='path of prediction json file')
     parser.add_argument('--out-dir', type=str, default='./outputs/dataset_name/', help='output directory to save model')
-    parser.add_argument('--use-weight', type=bool, default=True, help='use weight')
-
+    parser.add_argument('--weight', dest='use_weight', action='store_true', default=True, help='use weight')
+    parser.add_argument('--no-weight', dest='use_weight', action='store_false')
     opt = parser.parse_args()
     main(opt)
