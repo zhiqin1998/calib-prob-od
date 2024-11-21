@@ -6,7 +6,7 @@
 ## Setup Environment
 Our code extends the implementation of [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) and [probdet](https://github.com/asharakeh/probdet) (probabilistic Faster R-CNN and Retinanet).
 1. Setup python environment following the installation instructions of each project (`YOLOX` and `probdet`).
-2. Install required libraries for post-hoc calibration and model evaluation with (torch and torchvision compiled with cpu:
+2. Install required libraries for post-hoc calibration and model evaluation with (remove torch and torchvision from requirements.txt if already installed):
     ```bash
     pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
     ```
@@ -31,7 +31,7 @@ VOC-MIX dataset is readily available in `data` for this anonymized repository. F
     ```
 
 ## How to train
-1. Follow command and training instructions of the subprojects:
+1. Follow training instructions and commands of the subprojects by first creating their respective config file:
    1. `YOLOX`: Create a new config file under `exps/default` and set 
       ```python
       self.uncertain = True
@@ -46,7 +46,7 @@ VOC-MIX dataset is readily available in `data` for this anonymized repository. F
 2. Perform inference on the hold-out dataset with the trained object detector, saving them in COCO json format.
 3. Train the isotonic regression models with `python train_ir.py`
 
-Example commands for training probabilistic YOLOX on VOC-MIX dataset:
+Example commands for training and calibrate probabilistic YOLOX on VOC-MIX dataset:
 ```bash
 cd YOLOX
 python tools/train.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 -o -c pretrained_weights/yolox_l.pth
