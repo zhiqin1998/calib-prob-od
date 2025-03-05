@@ -51,7 +51,7 @@ Example commands for training and calibrate probabilistic YOLOX on VOC-MIX datas
 ```bash
 cd YOLOX
 python tools/train.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 -o -c pretrained_weights/yolox_l.pth
-python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --save-path YOLOX_outputs/vocmix_val_pred.json
+python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --ckpt <ckpt_file> --save-path YOLOX_outputs/vocmix_val_pred.json
 cd ..
 python train_ir.py --gt-json data/vocmix/annotations/instances_val2017.json --pred-json YOLOX/YOLOX_outputs/vocmix_val_pred.json --out-dir outputs/vocmix/
 ```
@@ -64,7 +64,7 @@ python train_ir.py --gt-json data/vocmix/annotations/instances_val2017.json --pr
 Example commands for inferencing and evaluating probabilistic YOLOX on VOC-MIX test dataset:
 ```bash
 cd YOLOX
-python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --test --save-path YOLOX_outputs/vocmix_test_pred.json
+python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --ckpt <ckpt_file> --test --save-path YOLOX_outputs/vocmix_test_pred.json
 cd ..
 python test_ir.py --pred-json YOLOX/YOLOX_outputs/vocmix_test_pred.json --out-json outputs/vocmix/ir_calibrated_test.json \
            --class-model outputs/vocmix/class_ir_model.pkl  --loc-model outputs/vocmix/loc_ir_model.pkl   
