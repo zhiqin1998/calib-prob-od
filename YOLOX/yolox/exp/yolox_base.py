@@ -110,9 +110,9 @@ class Exp(BaseExp):
         self.nmsthre = 0.65
 
         self.uncertain = False
-        self.bbox_unc_loss = 'nll'  # dmm (direct moment matching)
+        self.bbox_unc_loss = 'dmm'  # nll_na, dmm (direct moment matching)
         self.clamp_log_var = 7.
-        self.bbox_unc_weight = 0.1
+        self.bbox_unc_weight = 0.1  # 0.1
 
     def get_model(self):
         from yolox.models import YOLOX, YOLOPAFPN, YOLOXHead
@@ -317,17 +317,25 @@ class Exp(BaseExp):
 
     def get_eval_dataset(self, **kwargs):
         from yolox.data import COCODataset, ValTransform
+        from pycocotools.coco import COCO
+
         testdev = kwargs.get("testdev", False)
         legacy = kwargs.get("legacy", False)
         train = kwargs.get("train", False)
 
-        return COCODataset(
+        dataset = COCODataset(
             data_dir=self.data_dir,
             json_file=(self.val_ann if not testdev else self.test_ann) if not train else self.train_ann,
             name=("val2017" if not testdev else "test2017") if not train else "train2017",
             img_size=self.test_size,
             preproc=ValTransform(legacy=legacy),
         )
+        dataset.coco['annotations'] = [x for x in dataset.coco['annotations'] if max(x['class_logits']) >= 0.5]
+        mv_dataset = COCO()
+        mv_dataset.dataset = dataset.coco.dataset
+        mv_dataset.createIndex()
+        dataset.coco = mv_dataset
+        return dataset
 
     def get_eval_loader(self, batch_size, is_distributed, **kwargs):
         valdataset = self.get_eval_dataset(**kwargs)

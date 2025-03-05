@@ -15,7 +15,7 @@ class Exp(MyExp):
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
         self.num_classes = 20
-        self.data_dir = '../data/voc_mix/processed_coco_unc_ind'
+        self.data_dir = '<path to voc_mix/processed_coco_unc_ind>'
 
         self.warmup_epochs = 1
         self.max_epoch = 20

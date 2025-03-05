@@ -16,17 +16,18 @@ Our code extends the implementation of [YOLOX](https://github.com/Megvii-BaseDet
     wget https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_l.pth -P pretrained_weights
     cd ..
     cd probdet && mkdir pretrained_weights
-    # download deterministic and NLL for Faster R-CNN and Retinanet from gdrive (check original repo readme.md)
+    # download weights of deterministic and NLL for Faster R-CNN and Retinanet from gdrive (check original repo readme.md)
     ```
    
 ## Preparing Datasets
-VOC-MIX dataset is readily available in `data` for this anonymized repository. Follow the steps below to bring your own dataset.
+VBD-CXR and VOC-MIX datasets are readily available in `data` for this anonymized repository. 
+Follow the steps below to bring your own dataset:
 1. Create a new directory in `data` with your dataset name
 2. Place the training, validation and test images into `train2017`, `val2017` and `test2017`, respectively
 3. Prepare your annotations with YOLO (one txt file per image) format: x1,y1,x2,y2,class_id,annotator_id
-4. Run the following script to cluster raw annotations and preprocess them into expected COCO format
+4. Run the following script to cluster raw annotations and preprocess each set into expected COCO format
     ```bash
-    python preprocess_data.py --yolo-txt-dirs <path to yolo annotations> --output-json data/<dataset name>/annotations/instances_{train/val/test}2017.json \
+    python preprocess_data.py --yolo-txt-dir <path to yolo annotations> --output-json data/<dataset name>/annotations/instances_{train/val/test}2017.json \
                 --image-dir data/<dataset name>/{train/val/test}2017/ --n-class <number of classes>
     ```
 
@@ -50,9 +51,9 @@ Example commands for training and calibrate probabilistic YOLOX on VOC-MIX datas
 ```bash
 cd YOLOX
 python tools/train.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 -o -c pretrained_weights/yolox_l.pth
-python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --save-path vocmix_val_pred.json
+python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --save-path YOLOX_outputs/vocmix_val_pred.json
 cd ..
-python train_ir.py --gt-json data/vocmix/annotations/instances_val2017.json --pred-json YOLOX/vocmix_val_pred.json --out-dir outputs/vocmix/
+python train_ir.py --gt-json data/vocmix/annotations/instances_val2017.json --pred-json YOLOX/YOLOX_outputs/vocmix_val_pred.json --out-dir outputs/vocmix/
 ```
 
 ## Inference and Evaluation
@@ -63,9 +64,11 @@ python train_ir.py --gt-json data/vocmix/annotations/instances_val2017.json --pr
 Example commands for inferencing and evaluating probabilistic YOLOX on VOC-MIX test dataset:
 ```bash
 cd YOLOX
-python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --test --save-path vocmix_test_pred.json
+python tools/eval.py -f exps/default/yolox_l_vocmix_uncertain.py -d 1 -b 16 --fp16 --test --save-path YOLOX_outputs/vocmix_test_pred.json
 cd ..
-python test_ir.py --pred-json YOLOX/vocmix_test_pred.json --out-json outputs/vocmix/ir_calibrated_test.json \
+python test_ir.py --pred-json YOLOX/YOLOX_outputs/vocmix_test_pred.json --out-json outputs/vocmix/ir_calibrated_test.json \
            --class-model outputs/vocmix/class_ir_model.pkl  --loc-model outputs/vocmix/loc_ir_model.pkl   
 python eval_calibration.py --gt-json data/vocmix/annotations/instances_test2017.json --pred-json outputs/vocmix/ir_calibrated_test.json
 ```
+
+Additionally, to compute other metrics such as LRP and PDQ if ground truth is available, please use the original repository at [LRP-Error](https://github.com/kemaloksuz/LRP-Error) and [pdq_evaluation](https://github.com/david2611/pdq_evaluation).

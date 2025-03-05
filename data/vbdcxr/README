@@ -1,0 +1,4 @@
+1. Download all images from the VinBigData https://www.kaggle.com/competitions/vinbigdata-chest-xray-abnormalities-detection.
+2. With the provided `instances_train2017.json`, create a hold out validation set accordingly into `instances_val2017.json`
+3. Create train2017, val2017 and test2017 and put images from the VinBigData dataset.
+4. (Optional for baselines) Copy everything here to a new folder and duplicate the training dataset (images and annotations) for each unique annotator.

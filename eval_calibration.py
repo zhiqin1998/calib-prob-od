@@ -34,11 +34,13 @@ def main(opt):
         all_gts.append(gts)
         all_raw_bboxes.append(raw_bboxes)
 
-    unc_metrics, _ = compute_metrics(preds[0], preds[1], preds[2], all_gts, all_raw_bboxes, iou_thres=0.5, )
+    unc_metrics, counts = compute_metrics(preds[0], preds[1], preds[2], all_gts, all_raw_bboxes, iou_thres=0.5, )
     print(f'TVD: \t\t{unc_metrics[0]:.5f}\n'
           f'TVD (FP):\t{unc_metrics[1]:.5f}\n'
           f'LUE: \t\t{unc_metrics[2]:.5f}\n'
           f'FNE: \t\t{unc_metrics[3]:.5f}\n')
+    print(f'TP: {counts[0]}, FP: {counts[1]}, FN: {counts[2]}')
+
 
 
 if __name__ == '__main__':

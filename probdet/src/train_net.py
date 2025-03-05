@@ -23,7 +23,7 @@ from d2.train_net import Trainer as Detr_Trainer
 from core.setup import setup_config, setup_arg_parser
 from custom_dataset import UncDatasetMapper
 
-def custom_register_coco_instances(name, metadata, json_file, image_root):
+def custom_register_coco_instances(name, metadata, json_file, image_root, mv=False):
     """
     Register a dataset in COCO's json annotation format for
     instance detection, instance segmentation and keypoint detection.
@@ -40,11 +40,21 @@ def custom_register_coco_instances(name, metadata, json_file, image_root):
         json_file (str): path to the json instance annotation file.
         image_root (str or path-like): directory which contains all the images.
     """
+    def custom_load_coco_json(*args, **kwargs):
+        temp = []
+        for res in load_coco_json(*args, **kwargs):
+            res['annotations'] = [x for x in res['annotations'] if max(x['class_logits']) >= 0.5]
+            temp.append(res)
+        return temp
+
     assert isinstance(name, str), name
     assert isinstance(json_file, (str, os.PathLike)), json_file
     assert isinstance(image_root, (str, os.PathLike)), image_root
     # 1. register a function which returns dicts
-    DatasetCatalog.register(name, lambda: load_coco_json(json_file, image_root, name, extra_annotation_keys=['raw_bbox', 'class_logits']))
+    if mv:
+        DatasetCatalog.register(name, lambda: custom_load_coco_json(json_file, image_root, name, extra_annotation_keys=['raw_bbox', 'class_logits']))
+    else:
+        DatasetCatalog.register(name, lambda: load_coco_json(json_file, image_root, name, extra_annotation_keys=['raw_bbox', 'class_logits']))
 
     # 2. Optionally, add metadata about this dataset,
     # since they might be useful in evaluation, visualization or logging
@@ -52,12 +62,17 @@ def custom_register_coco_instances(name, metadata, json_file, image_root):
         json_file=json_file, image_root=image_root, evaluator_type="coco", **metadata
     )
 
-register_coco_instances('vocmix_val', {}, '../data/voc_mix/processed_coco_unc/annotations/instances_val2017.json', '../data/voc_mix/processed_coco_unc/val2017')
-register_coco_instances('vocmix_test', {}, '../data/voc_mix/processed_coco_unc/annotations/instances_test2017.json', '../data/voc_mix/processed_coco_unc/test2017')
+custom_register_coco_instances('vocmix_val', {}, '../data/vocmix/annotations/instances_val2017.json', '../data/vocmix/val2017', mv=True)
+custom_register_coco_instances('vocmix_test', {}, '../data/vocmix/annotations/instances_test2017.json', '../data/vocmix/test2017', mv=True)
 
-register_coco_instances('vocmix_train_ind', {}, '../data/voc_mix/processed_coco_unc_ind/annotations/instances_train2017.json', '../data/voc_mix/processed_coco_unc_ind/train2017')
+custom_register_coco_instances('vocmix_train_ind', {}, '../data/vocmix/processed_coco_unc_ind/annotations/instances_train2017.json', '../data/vocmix/processed_coco_unc_ind/train2017')
+custom_register_coco_instances('vocmix_train_unc', {}, '../data/vocmix/annotations/instances_train2017.json', '../data/vocmix/train2017')
 
-custom_register_coco_instances('vocmix_train_unc', {}, '../data/voc_mix/processed_coco_unc/annotations/instances_train2017.json', '../data/voc_mix/processed_coco_unc/train2017')
+custom_register_coco_instances('vbdcxr_val', {}, '../data/vbdcxr/annotations/instances_val2017.json', '../data/vbdcxr/val2017', mv=True)
+custom_register_coco_instances('vbdcxr_test', {}, '../data/vbdcxr/annotations/instances_test2017.json', '../data/vbdcxr/test2017', mv=True)
+
+custom_register_coco_instances('vbdcxr_train_ind', {}, '../data/vbdcxr/processed_coco_unc_ind/annotations/instances_train2017.json', '../data/vbdcxr/processed_coco_unc_ind/train2017')
+custom_register_coco_instances('vbdcxr_train_unc', {}, '../data/vbdcxr/annotations/instances_train2017.json', '../data/vbdcxr/train2017')
 
 
 class Trainer(DefaultTrainer):

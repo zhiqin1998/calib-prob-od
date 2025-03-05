@@ -11,6 +11,10 @@ CLASS_NAMES = ['aeroplane', 'bicycle', 'bird', 'boat',
                 'cow', 'diningtable', 'dog', 'horse',
                 'motorbike', 'person', 'pottedplant',
                 'sheep', 'sofa', 'train', 'tvmonitor']
+# CLASS_NAMES = ['Aortic enlargement', 'Atelectasis', 'Calcification', 'Cardiomegaly',
+#                 'Consolidation', 'ILD', 'Infiltration', 'Lung Opacity', 'Nodule/Mass',
+#                 'Other lesion', 'Pleural effusion', 'Pleural thickening', 'Pneumothorax',
+#                 'Pulmonary fibrosis']
 
 def main(opt):
     assert len(CLASS_NAMES) == opt.n_class, 'invalid number of classes'
@@ -18,26 +22,29 @@ def main(opt):
     d = {'categories': [{'id': 0, 'name': 'bg'}] + [{'id': i, 'name': CLASS_NAMES[i - 1]} for i in
                                                     range(1, len(CLASS_NAMES) + 1)], 'images': [], 'annotations': []}
 
-    all_files = os.listdir(opt.yolo_txt_dir)
-    print(f'processing {len(all_files)} files')
+    all_files = os.listdir(opt.image_dir)
+    print(f'processing {len(all_files)} files in {opt.image_dir}')
     for f in all_files:
-        if f.endswith('.txt'):
-            img = cv2.imread(os.path.join(opt.image_dir, f[:-4]))
-            height, width, _ = img.shape
-            img_id = len(d['images']) + (10 ** len(str(len(all_files))))
-            d['images'].append({'id': img_id, 'width': width, 'height': height, 'file_name': f[:-4]})
+        img = cv2.imread(os.path.join(opt.image_dir, f))
+        height, width, _ = img.shape
+        # try:
+        #     img_id = int(f[:-4])
+        # except ValueError:
+        img_id = len(d['images']) + (10 ** len(str(len(all_files))))
+        d['images'].append({'id': img_id, 'width': width, 'height': height, 'file_name': f})
 
-            anns = read_raw_anns(os.path.join(opt.yolo_txt_dir, f))
-            unique_annid = np.unique(anns[:, 5])
-            processed_anns = preprocess_anns(anns, len(unique_annid), opt.n_class)
-            processed_anns = convert_unc_bbox(processed_anns, to_coco=True, n_class=opt.n_class+1)
-            for ann in processed_anns:
-                ann_id = len(d['annotations'])
-                ann, raw_bbox = np.asarray(ann[:4 + opt.n_class+1]), ann[4 + opt.n_class+1:]
-                assert len(raw_bbox) % 4 == 0
-                d['annotations'].append({'id': ann_id, 'image_id': img_id, 'bbox': ann[:4].tolist(), 'iscrowd': 0,
-                                         'category_id': int(ann[4:].argmax()), 'area': int(ann[2] * ann[3]),
-                                         'class_logits': ann[4:].tolist(), 'raw_bbox': raw_bbox})
+        f = f + '.txt'
+        anns = read_raw_anns(os.path.join(opt.yolo_txt_dir, f))
+        unique_annid = np.unique(anns[:, 5])
+        processed_anns = preprocess_anns(anns, len(unique_annid), opt.n_class)
+        processed_anns = convert_unc_bbox(processed_anns, to_coco=True, n_class=opt.n_class+1)
+        for ann in processed_anns:
+            ann_id = len(d['annotations'])
+            ann, raw_bbox = np.asarray(ann[:4 + opt.n_class+1]), ann[4 + opt.n_class+1:]
+            assert len(raw_bbox) % 4 == 0
+            d['annotations'].append({'id': ann_id, 'image_id': img_id, 'bbox': ann[:4].tolist(), 'iscrowd': 0,
+                                     'category_id': int(ann[4:].argmax()), 'area': int(ann[2] * ann[3]),
+                                     'class_logits': ann[4:].tolist(), 'raw_bbox': raw_bbox})
 
     with open(opt.output_json, 'w') as f:
         json.dump(d, f)

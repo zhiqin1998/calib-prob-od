@@ -15,7 +15,7 @@ class Exp(MyExp):
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
         self.num_classes = 20
-        self.data_dir = '../data/voc_mix/processed_coco_unc'
+        self.data_dir = '../data/vocmix'
 
         self.max_epoch = 400
         self.warmup_epochs = 10
@@ -28,6 +28,6 @@ class Exp(MyExp):
         self.no_aug_epochs = 100
 
         self.uncertain = True
-        self.bbox_unc_loss = 'dmm'  # nll, dmm (direct moment matching)
+        self.bbox_unc_loss = 'dmm'
         self.clamp_log_var = 7.
         self.bbox_unc_weight = 0.1  # 0.1
