@@ -1,7 +1,10 @@
 # Calibration of Probabilistic Object Detectors with Annotators Uncertainty
 
-[//]: # (## Description)
-[//]: # (Abstract goes here)
+## Description
+High degrees of disagreement among annotators can exist for ambiguous objects, e.g. in medical images, underscoring the challenges of establishing ground truth annotations in object detection tasks. Despite this, all existing object detectors implicitly require access to ground truth annotations for either training or evaluation. 
+The fundamental questions we target are: How can we learn an object detector with multiple annotators' annotations but without objective ground truth annotations due to object ambiguity, and how can we enable the learned detector to express meaningful model predictive uncertainties in detecting ambiguous objects? 
+To answer these questions, we present a highly interpretable approach to calibrate probabilistic object detectors, where the calibration goal is to align the class confidence and bounding box variance estimates to the annotators' annotation distribution. 
+We introduce an efficient yet effective framework to calibrate probabilistic object detectors by designing four evaluation metrics to measure calibration errors regarding classification and localization, and proposing a train-time calibration and post-hoc calibrator, all without the need to access any ground truth. This framework is model-agnostic as it can be adapted to any existing probabilistic object detectors. Empirical results with real-world and synthetic datasets of medical and natural images demonstrate the superior performance of the proposed framework with three popular object detectors. 
 
 ## Setup Environment
 Our code extends the implementation of [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) and [probdet](https://github.com/asharakeh/probdet) (probabilistic Faster R-CNN and Retinanet).
